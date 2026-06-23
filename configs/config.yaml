@@ -1,0 +1,60 @@
+# ============================================================
+# minecraft-rl — configuração central
+# Edite aqui para mudar hiperparâmetros sem tocar no código
+# ============================================================
+
+project:
+  name: "minecraft-rl"
+  phase: 1  # Fase atual do roadmap (1-4)
+
+environment:
+  env_id: "MineRLTreechop-v0"
+  frame_stack: 4          # Número de frames empilhados
+  frame_size: 64          # Tamanho do frame (64x64)
+  grayscale: false        # Manter RGB (3 canais)
+  max_episode_steps: 8000 # Limite de steps por episódio
+  n_envs: 1               # Ambientes paralelos (CPU: manter 1)
+  seed: 42
+
+ppo:
+  total_timesteps: 500_000   # Fase 1-2: 500k é suficiente para ver aprendizado
+  learning_rate: 3.0e-4
+  n_steps: 2048              # Steps coletados antes de cada update
+  batch_size: 64             # Mini-batch size
+  n_epochs: 10               # Passes pelo rollout buffer
+  gamma: 0.99                # Fator de desconto
+  gae_lambda: 0.95           # Lambda do GAE
+  clip_range: 0.2            # Epsilon do clipping PPO
+  clip_range_vf: null        # Clip da value function (null = desabilitado)
+  ent_coef: 0.01             # Coeficiente do entropy bonus
+  vf_coef: 0.5               # Coeficiente da value function loss
+  max_grad_norm: 0.5         # Gradient clipping
+  normalize_advantage: true
+
+reward_shaping:
+  enabled: true
+  # Recompensas densas intermediárias (Fase 2+)
+  look_at_log: 0.02          # Olhar para bloco de madeira
+  attack_log: 0.05           # Atacar bloco de madeira
+  collect_log: 1.0           # Coletar log (reward original)
+  approach_tree: 0.01        # Aproximar de árvore
+  penalty_idle: -0.001       # Penalidade por ficar parado
+
+training:
+  log_interval: 10           # A cada quantos updates logar
+  save_freq: 50_000          # A cada quantos steps salvar checkpoint
+  eval_freq: 25_000          # A cada quantos steps avaliar
+  eval_episodes: 5           # Episódios por avaliação
+  tb_log_name: "ppo_treechop"
+
+paths:
+  logs: "logs/"
+  models: "models/"
+  checkpoints: "models/checkpoints/"
+  tensorboard: "logs/tensorboard/"
+
+device:
+  # "auto" detecta DirectML se disponível, senão CPU
+  # "cpu" força CPU
+  # "privateuseone" força DirectML (AMD GPU via torch-directml)
+  backend: "auto"

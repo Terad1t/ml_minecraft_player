@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# uv / venv
+.venv/
+venv/
+.uv/
+
+# Outputs do projeto
+logs/
+models/
+*.zip
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# MineRL cache (download do Minecraft)
+# CUIDADO: isso é pesado (~2GB), não commitar
+~/.minerl/
+data/
+
+# Windows
+Thumbs.db
+Desktop.ini
+*.lnk
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.user
+
+# Misc
+.DS_Store
+*.log
