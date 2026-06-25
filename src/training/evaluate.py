@@ -12,7 +12,7 @@ import argparse
 import numpy as np
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))    
 
 from rich.console import Console
 from rich.table import Table

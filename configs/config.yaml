@@ -57,4 +57,4 @@ device:
   # "auto" detecta DirectML se disponível, senão CPU
   # "cpu" força CPU
   # "privateuseone" força DirectML (AMD GPU via torch-directml)
-  backend: "auto"
+  backend: "cpu"

@@ -14,8 +14,8 @@ um aspecto (obs, reward, action) sem alterar o env original.
 from __future__ import annotations
 
 import numpy as np
-import gymnasium as gym
-from gymnasium import spaces
+import gym
+from gym import spaces
 
 
 class MineRLObservationWrapper(gym.ObservationWrapper):
@@ -106,9 +106,15 @@ class RewardShapingWrapper(gym.Wrapper):
         self._max_idle = 100  # steps sem ação útil = penalidade
 
     def step(self, action):
-        obs, reward, terminated, truncated, info = self.env.step(action)
-        shaped_reward = self._shape_reward(obs, action, reward, info)
-        return obs, shaped_reward, terminated, truncated, info
+        result = self.env.step(action)
+        if len(result) == 4:
+            obs, reward, done, info = result
+            shaped_reward = self._shape_reward(obs, action, reward, info)
+            return obs, shaped_reward, done, info
+        else:
+            obs, reward, terminated, truncated, info = result
+            shaped_reward = self._shape_reward(obs, action, reward, info)
+            return obs, shaped_reward, terminated, truncated, info
 
     def reset(self, **kwargs):
         self._steps_idle = 0
@@ -167,3 +173,78 @@ class NormalizeObservation(gym.ObservationWrapper):
 
     def observation(self, obs: np.ndarray) -> np.ndarray:
         return obs.astype(np.float32) / 255.0
+    
+class MineRLActionDiscretizer(gym.ActionWrapper):
+    """
+    Converte o action space Dict do MineRL em Discrete.
+    Define N ações fixas relevantes para coletar madeira.
+    O agente escolhe um número (0-6) e o wrapper executa a ação correta.
+    """
+
+    def __init__(self, env):
+        super().__init__(env)
+        self._actions = [
+            # 0 - andar para frente
+            {"forward": 1, "back": 0, "left": 0, "right": 0,
+             "jump": 0, "attack": 0, "sprint": 0, "sneak": 0,
+             "camera": [0, 0]},
+            # 1 - atacar (quebrar bloco)
+            {"forward": 0, "back": 0, "left": 0, "right": 0,
+             "jump": 0, "attack": 1, "sprint": 0, "sneak": 0,
+             "camera": [0, 0]},
+            # 2 - andar + atacar
+            {"forward": 1, "back": 0, "left": 0, "right": 0,
+             "jump": 0, "attack": 1, "sprint": 0, "sneak": 0,
+             "camera": [0, 0]},
+            # 3 - virar câmera para esquerda
+            {"forward": 0, "back": 0, "left": 0, "right": 0,
+             "jump": 0, "attack": 0, "sprint": 0, "sneak": 0,
+             "camera": [0, -15]},
+            # 4 - virar câmera para direita
+            {"forward": 0, "back": 0, "left": 0, "right": 0,
+             "jump": 0, "attack": 0, "sprint": 0, "sneak": 0,
+             "camera": [0, 15]},
+            # 5 - olhar para cima
+            {"forward": 0, "back": 0, "left": 0, "right": 0,
+             "jump": 0, "attack": 0, "sprint": 0, "sneak": 0,
+             "camera": [-15, 0]},
+            # 6 - andar + pular
+            {"forward": 1, "back": 0, "left": 0, "right": 0,
+             "jump": 1, "attack": 0, "sprint": 0, "sneak": 0,
+             "camera": [0, 0]},
+        ]
+        self.action_space = gym.spaces.Discrete(len(self._actions))
+
+    def action(self, action_idx: int) -> dict:
+        return self._actions[action_idx]
+    
+class FlattenFrameStack(gym.ObservationWrapper):
+    """
+    Converte (4, 3, 64, 64) → (12, 64, 64) para o SB3 aceitar como imagem.
+    """
+    def __init__(self, env):
+        super().__init__(env)
+        obs_shape = env.observation_space.shape  # (4, 3, 64, 64)
+        new_shape = (obs_shape[0] * obs_shape[1], obs_shape[2], obs_shape[3])
+        self.observation_space = gym.spaces.Box(
+            low=0, high=255, shape=new_shape, dtype=np.uint8
+        )
+
+    def observation(self, obs):
+        return np.array(obs).reshape(self.observation_space.shape)
+
+    def step(self, action):
+        result = self.env.step(action)
+        if len(result) == 4:
+            obs, reward, done, info = result
+            return self.observation(obs), reward, done, info
+        else:
+            obs, reward, terminated, truncated, info = result
+            return self.observation(obs), reward, terminated, truncated, info
+
+    def reset(self, **kwargs):
+        result = self.env.reset(**kwargs)
+        if isinstance(result, tuple):
+            obs, info = result
+            return self.observation(obs), info
+        return self.observation(result)

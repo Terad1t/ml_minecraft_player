@@ -14,10 +14,13 @@ Rode com:
 from __future__ import annotations
 
 import sys
+import os
 import time
 from pathlib import Path
+from turtle import done
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 import numpy as np
 from rich.console import Console
@@ -53,7 +56,7 @@ def run_random_agent(
     results = []
 
     for ep in range(n_episodes):
-        obs, info = env.reset()
+        obs = env.reset()
         ep_reward = 0.0
         ep_steps = 0
         start = time.time()
@@ -63,7 +66,9 @@ def run_random_agent(
         for step in range(max_steps):
             # Ação aleatória — amostra do espaço de ações
             action = env.action_space.sample()
-            obs, reward, terminated, truncated, info = env.step(action)
+            obs, reward, done, info = env.step(action)
+            if done:
+                break
 
             ep_reward += reward
             ep_steps += 1
@@ -74,9 +79,6 @@ def run_random_agent(
                     f"  [green]✓ Madeira coletada![/green] "
                     f"step={step}, reward={reward:.2f}"
                 )
-
-            if terminated or truncated:
-                break
 
         elapsed = time.time() - start
         fps = ep_steps / elapsed if elapsed > 0 else 0

@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 # Garante que src/ está no path quando rodado da raiz do projeto
-sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from src.utils import (
     load_config,

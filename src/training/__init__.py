@@ -1,3 +1,1 @@
-from .train import train
-
-__all__ = ["train"]
+# src/training/__init__.py
